@@ -1,0 +1,505 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Device Tree Source for NUC990
+ *
+ * Copyright (C) 2025 Nuvoton Technology Corp.
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/clock/nuvoton,nuc990-clk.h>
+#include <dt-bindings/reset/nuvoton,nuc990-reset.h>
+
+/ {
+	model = "Nuvoton NUC990 family SoC";
+	compatible = "nuvoton,nuc990";
+	#address-cells = <1>;
+	#size-cells = <1>;
+	interrupt-parent = <&aic>;
+
+	aliases {
+		serial0 = &uart0;
+		ethernet0 = &emac0;
+		ethernet1 = &emac1;
+	};
+
+	cpus {
+		#address-cells = <0>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,arm926ej-s";
+			device_type = "cpu";
+		};
+	};
+
+	clocks {
+		hxt: hxt {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <12000000>;
+		};
+
+		lxt: lxt {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+		};
+	};
+
+	ahb {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		reg = <0xb0000000 0x140000>;
+		ranges;
+
+		sys: syscon@b0000000 {
+			compatible = "nuvoton,nuc990-syscon", "syscon", "simple-mfd";
+			reg = <0xb0000000 0x200>;
+
+			reset: reset-controller {
+				compatible = "nuvoton,nuc990-reset";
+				#reset-cells = <1>;
+			};
+		};
+
+		clk: clock-controller@b0000200 {
+			compatible = "nuvoton,nuc990-clk";
+			reg = <0xb0000200 0x100>;
+
+			#clock-cells = <1>;
+			clocks = <&hxt>, <&lxt>;
+			clock-names = "hxt", "lxt";
+
+			assigned-clocks = <&clk UPLL>, <&clk APLL>, <&clk SYS_MUX>, <&clk I2S_MUX>;
+			assigned-clock-parents = <&clk HXT>, <&clk HXT>, <&clk UPLL>, <&clk APLL>;
+			assigned-clock-rates = <300000000>, <98400000>;
+		};
+#if 0
+		pinctrl: pinctrl@b0000000 {
+			compatible = "nuvoton,nuc990-pinctrl";
+			sys = <&sys>;
+			status = "disabled";
+		};
+
+		gpio: gpio@b0004000 {
+			compatible = "nuvoton,nuc990-gpio";
+			reg = <0xb0004000 0x1000>;
+			clocks = <&clk GPIO_GATE>;
+			gpio-controller;
+			status = "disabled";
+		};
+
+		dma0: dma@b0008000 {
+			compatible = "nuvoton,nuc990-dma";
+			reg = <0xb0008000 0x1000>;
+			interrupts = <52 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&clk PDMA0_GATE>;
+			status = "disabled";
+		};
+
+		dma1: dma@b0009000 {
+			compatible = "nuvoton,nuc990-dma";
+			reg = <0xb0009000 0x1000>;
+			interrupts = <53 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&clk PDMA1_GATE>;
+			status = "disabled";
+		};
+
+		ebi: ebi@b0010000 {
+			compatible = "nuvoton,nuc990-ebi";
+			reg = <0xb0010000 0x1000>;
+			clocks = <&clk EBI_GATE>;
+			clock-names = "ebi";
+			status = "disabled";
+		};
+#endif
+		emac0: ethernet@b0012000 {
+			compatible = "nuvoton,nuc990-emac";
+			reg = <0xb0012000 0x1000>;
+			interrupts = <60 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&clk EMAC0_GATE>, <&clk MDC_DIV>;
+			clock-names = "emac", "mdc";
+			resets = <&reset NUC990_RESET_EMAC0>;
+			status = "disabled";
+		};
+
+		emac1: ethernet@b0022000 {
+			compatible = "nuvoton,nuc990-emac";
+			reg = <0xb0022000 0x1000>;
+			interrupts = <62 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&clk EMAC1_GATE>, <&clk MDC_DIV>;
+			clock-names = "emac", "mdc";
+			resets = <&reset NUC990_RESET_EMAC1>;
+			status = "disabled";
+		};
+#if 0
+		sdh1: sdh@b0018000 {
+			compatible = "nuvoton,nuc990-sdh";
+			reg = <0xb0018000 0x1000>;
+			interrupts = <58 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&clk SDH1_GATE>;
+			status = "disabled";
+		};
+
+		sdh0: sdh@b001a000 {
+			compatible = "nuvoton,nuc990-sdh";
+			reg = <0xb001a000 0x1000>;
+			interrupts = <57 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&clk SDH0_GATE>;
+			status = "disabled";
+		};
+
+		fmi: fmi@b0019000 {
+			compatible = "nuvoton,nuc990-fmi";
+			reg = <0xb0019000 0x1000>;
+			interrupts = <59 IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+		};
+
+		crypto: crypto@b001c000{
+			compatible = "nuvoton,nuc990-crypto";
+			reg = <0xb001c000 0x1000>;
+			interrupts = <80 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&clk CRPT_GATE>;
+			status = "disabled";
+		};
+
+		i2s: i2s@b0020000 {
+			compatible = "nuvoton,nuc990-audio-i2s";
+			reg = <0xb0020000 0x1000>;
+			interrupts = <16 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&clk I2S_GATE>;
+			status = "disabled";
+		};
+#endif
+		apb {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			compatible = "simple-bus";
+			ranges;
+
+			aic: interrupt-controller@b0042000 {
+				compatible = "nuvoton,nuc990-aic";
+				reg = <0xb0042000 0x1000>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				clocks = <&clk AIC_GATE>;
+			};
+#if 0
+			wdt0: wdt@b0040000 {
+				compatible = "nuvoton,nuc990-wdt";
+				reg = <0xb0040000 0x100>;
+				interrupts = <1 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk WDT0_GATE>;
+				status = "disabled";
+			};
+
+			wwdt0: wwdt@b0040100 {
+				compatible = "nuvoton,nuc990-wwdt";
+				reg = <0xb0040100 0x100>;
+				interrupts = <2 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk WWDT0_GATE>;
+				status = "disabled";
+			};
+
+			adc0: adc@b0043000 {
+				compatible = "nuvoton,nuc990-adc";
+				reg = <0xb0043000 0x1000>;
+				interrupts = <42 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk ADC0_GATE>;
+				clock-names = "adc0";
+				status = "disabled";
+			};
+
+			eadc0: eadc@b0044000 {
+				compatible = "nuvoton,nuc990-eadc";
+				reg = <0xb0044000 0x1000>;
+				interrupts = <43 IRQ_TYPE_LEVEL_HIGH>,
+							<44 IRQ_TYPE_LEVEL_HIGH>,
+							<45 IRQ_TYPE_LEVEL_HIGH>,
+							<46 IRQ_TYPE_LEVEL_HIGH>;
+				
+				clocks = <&clk EADC0_GATE>;
+				status = "disabled";
+			};
+
+			timer0: timer@b0050000 {
+				compatible = "nuvoton,nuc990-timer";
+				reg = <0xb0050000 0x100>;
+				interrupts = <18 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk TMR0_GATE>;
+				clock-names = "timer";
+				status = "disabled";
+			};
+
+			timer1: timer@b0050100 {
+				compatible = "nuvoton,nuc990-timer";
+				reg = <0xb0050100 0x100>;
+				interrupts = <19 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk TMR1_GATE>;
+				clock-names = "timer";
+				status = "disabled";
+			};
+
+			timer2: timer@b0051000 {
+				compatible = "nuvoton,nuc990-timer";
+				reg = <0xb0051000 0x100>;
+				interrupts = <20 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk TMR2_GATE>;
+				clock-names = "timer";
+				status = "disabled";
+			};
+
+			timer3: timer@b0051100 {
+				compatible = "nuvoton,nuc990-timer";
+				reg = <0xb0051100 0x100>;
+				interrupts = <21 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk TMR3_GATE>;
+				clock-names = "timer";
+				status = "disabled";
+			};
+#endif
+			timer4: timer@b0052000 {
+				compatible = "nuvoton,nuc990-clksrc";
+				reg = <0xb0052000 0x100>;
+				interrupts = <22 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk TMR4_GATE>;
+				clock-names = "timer";
+				status = "okay";
+			};
+
+			timer5: timer@b0052100 {
+				compatible = "nuvoton,nuc990-clkevt";
+				reg = <0xb0052100 0x100>;
+				interrupts = <23 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk TMR5_GATE>;
+				clock-names = "timer";
+				status = "okay";
+			};
+#if 0
+			bpwm0: bpwm@b0058000 {
+				compatible = "nuvoton,nuc990-bpwm";
+				reg = <0xb0058000 0x1000>;
+				interrupts = <30 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk BPWM0_GATE>;
+				status = "disabled";
+			};
+
+			bpwm1: bpwm@b0059000 {
+				compatible = "nuvoton,nuc990-bpwm";
+				reg = <0xb0059000 0x1000>;
+				interrupts = <31 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk BPWM1_GATE>;
+				status = "disabled";
+			};
+
+			qspi: qspi@b0060000 {
+				compatible = "nuvoton,nuc990-qspi";
+				reg = <0xb0060000 0x1000>;
+				interrupts = <47 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk QSPI0_GATE>;
+				status = "disabled";
+			};
+
+			spi0: spi@b0061000 {
+				compatible = "nuvoton,nuc990-spi";
+				reg = <0xb0061000 0x1000>;
+				interrupts = <48 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk SPI0_GATE>;
+				status = "disabled";
+			};
+
+			spi1: spi@b0062000 {
+				compatible = "nuvoton,nuc990-spi";
+				reg = <0xb0062000 0x1000>;
+				interrupts = <49 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk SPI1_GATE>;
+				status = "disabled";
+			};
+
+			spi2: spi@b0063000 {
+				compatible = "nuvoton,nuc990-spi";
+				reg = <0xb0063000 0x1000>;
+				interrupts = <50 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk SPI2_GATE>;
+				status = "disabled";
+			};
+
+			spi3: spi@b0064000 {
+				compatible = "nuvoton,nuc990-spi";
+				reg = <0xb0064000 0x1000>;
+				interrupts = <51 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk SPI3_GATE>;
+				status = "disabled";
+			};
+#endif
+			uart0: serial@b0070000 {
+				compatible = "nuvoton,nuc990-uart", "nuvoton,nuc990-earlycon";
+				reg = <0xb0070000 0x1000>;
+				interrupts = <32 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk UART0_GATE>;
+				clock-names = "uart";
+				status = "okay";
+			};
+#if 0
+			uart1: serial@b0071000 {
+				compatible = "nuvoton,nuc990-uart";
+				reg = <0xb0071000 0x1000>;
+				interrupts = <33 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk UART1_GATE>;
+				clock-names = "uart";
+				status = "disabled";
+			};
+
+			uart2: serial@b0072000 {
+				compatible = "nuvoton,nuc990-uart";
+				reg = <0xb0072000 0x1000>;
+				interrupts = <34 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk UART2_GATE>;
+				clock-names = "uart";
+				status = "disabled";
+			};
+
+			uart3: serial@b0073000 {
+				compatible = "nuvoton,nuc990-uart";
+				reg = <0xb0073000 0x1000>;
+				interrupts = <35 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk UART3_GATE>;
+				clock-names = "uart";
+				status = "disabled";
+			};
+
+			uart4: serial@b0074000 {
+				compatible = "nuvoton,nuc990-uart";
+				reg = <0xb0074000 0x1000>;
+				interrupts = <36 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk UART4_GATE>;
+				clock-names = "uart";
+				status = "disabled";
+			};
+
+			uart5: serial@b0075000 {
+				compatible = "nuvoton,nuc990-uart";
+				reg = <0xb0075000 0x1000>;
+				interrupts = <37 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk UART5_GATE>;
+				clock-names = "uart";
+				status = "disabled";
+			};
+
+			uart6: serial@b0076000 {
+				compatible = "nuvoton,nuc990-uart";
+				reg = <0xb0076000 0x1000>;
+				interrupts = <38 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk UART6_GATE>;
+				clock-names = "uart";
+				status = "disabled";
+			};
+
+			uart7: serial@b0077000 {
+				compatible = "nuvoton,nuc990-uart";
+				reg = <0xb0077000 0x1000>;
+				interrupts = <39 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk UART7_GATE>;
+				clock-names = "uart";
+				status = "disabled";
+			};
+
+			uart8: serial@b0078000 {
+				compatible = "nuvoton,nuc990-uart";
+				reg = <0xb0078000 0x1000>;
+				interrupts = <40 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk UART8_GATE>;
+				clock-names = "uart";
+				status = "disabled";
+			};
+
+			uart9: serial@b0079000 {
+				compatible = "nuvoton,nuc990-uart";
+				reg = <0xb0079000 0x1000>;
+				interrupts = <41 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk UART9_GATE>;
+				clock-names = "uart";
+				status = "disabled";
+			};
+
+			i2c0: i2c@b0080000 {
+				compatible = "nuvoton,nuc990-i2c";
+				reg = <0xb0080000 0x1000>;
+				interrupts = <24 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk I2C0_GATE>;
+				status = "disabled";
+			};
+
+			i2c1: i2c@b0081000 {
+				compatible = "nuvoton,nuc990-i2c";
+				reg = <0xb0081000 0x1000>;
+				interrupts = <25 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk I2C1_GATE>;
+				status = "disabled";
+			};
+
+			i2c2: i2c@b0082000 {
+				compatible = "nuvoton,nuc990-i2c";
+				reg = <0xb0082000 0x1000>;
+				interrupts = <26 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk I2C2_GATE>;
+				status = "disabled";
+			};
+
+			i2c3: i2c@b0083000 {
+				compatible = "nuvoton,nuc990-i2c";
+				reg = <0xb0083000 0x1000>;
+				interrupts = <27 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk I2C3_GATE>;
+				status = "disabled";
+			};
+
+			can0: can@b00a0000 {
+				compatible = "bosch,m_can";
+				reg = <0xb00a0000 0x1000>;
+				interrupts = <64 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk CAN0_GATE>;
+				clock-names = "can";
+				status = "disabled";
+			};
+
+			can1: can@b00a1000 {
+				compatible = "bosch,m_can";
+				reg = <0xb00a1000 0x1000>;
+				interrupts = <65 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk CAN1_GATE>;
+				clock-names = "can";
+				status = "disabled";
+			};
+
+			can2: can@b00a2000 {
+				compatible = "bosch,m_can";
+				reg = <0xb00a2000 0x1000>;
+				interrupts = <66 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk CAN2_GATE>;
+				clock-names = "can";
+				status = "disabled";
+			};
+
+			can3: can@b00a3000 {
+				compatible = "bosch,m_can";
+				reg = <0xb00a3000 0x1000>;
+				interrupts = <67 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk CAN3_GATE>;
+				clock-names = "can";
+				status = "disabled";
+			};
+#endif
+		};
+	};
+};

@@ -17,3 +17,10 @@ config CLK_MA35D1
 	  Build the clock controller driver for MA35D1 SoC.
 
 endif
+
+config COMMON_CLK_NUC990
+	bool "NUC990 clock controller common support"
+	depends on ARCH_NUC990 || COMPILE_TEST
+	default ARCH_NUC990
+	help
+	  This driver supports the clocks on Nuvoton NUC990 SoC.

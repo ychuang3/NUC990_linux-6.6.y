@@ -1400,6 +1400,13 @@ choice
 		  options; the platform specific options are deprecated
 		  and will be soon removed.
 
+	config DEBUG_NUC990_UART0
+		bool "NUC990 Debug UART0"
+		depends on ARCH_NUC990
+		help
+		  Say Y here if you want kernel low-level debugging support
+		  on Nuvoton NUC990.
+
 endchoice
 
 config DEBUG_AT91_UART
@@ -1478,6 +1485,7 @@ config DEBUG_UART_FLOW_CONTROL
 
 config DEBUG_LL_INCLUDE
 	string
+	default "debug/nuc990.S" if DEBUG_NUC990_UART0
 	default "debug/sa1100.S" if DEBUG_SA1100
 	default "debug/palmchip.S" if DEBUG_UART_8250_PALMCHIP
 	default "debug/8250.S" if DEBUG_LL_UART_8250 || DEBUG_UART_8250
@@ -1544,6 +1552,7 @@ config DEBUG_UART_8250
 
 config DEBUG_UART_PHYS
 	hex "Physical base address of debug UART"
+	default 0xb0070000 if DEBUG_NUC990_UART0
 	default 0x01c28000 if DEBUG_SUNXI_UART0
 	default 0x01c28400 if DEBUG_SUNXI_UART1
 	default 0x01d0c000 if DEBUG_DAVINCI_DA8XX_UART1
@@ -1673,10 +1682,12 @@ config DEBUG_UART_PHYS
 		DEBUG_DIGICOLOR_UA0 || \
 		DEBUG_AT91_UART || DEBUG_STM32_UART || \
 		DEBUG_STIH41X_ASC2 || DEBUG_STIH41X_SBC_ASC1 || \
-		DEBUG_STIH418_SBC_ASC0
+		DEBUG_STIH418_SBC_ASC0 || \
+		DEBUG_NUC990_UART0
 
 config DEBUG_UART_VIRT
 	hex "Virtual base address of debug UART"
+	default 0xf0070000 if DEBUG_NUC990_UART0
 	default 0xc881f000 if DEBUG_RV1108_UART2
 	default 0xc8821000 if DEBUG_RV1108_UART1
 	default 0xc8912000 if DEBUG_RV1108_UART0
@@ -1776,7 +1787,8 @@ config DEBUG_UART_VIRT
 		DEBUG_DIGICOLOR_UA0 || \
 		DEBUG_AT91_UART || DEBUG_STM32_UART || \
 		DEBUG_STIH41X_ASC2 || DEBUG_STIH41X_SBC_ASC1 || \
-		DEBUG_STIH418_SBC_ASC0
+		DEBUG_STIH418_SBC_ASC0 || \
+		DEBUG_NUC990_UART0
 
 config DEBUG_UART_8250_SHIFT
 	int "Register offset shift for the 8250 debug UART"

@@ -679,4 +679,13 @@ config SUNPLUS_SP7021_INTC
 	  chained controller, routing all interrupt source in P-Chip to
 	  the primary controller on C-Chip.
 
+config NUC990_AIC_IRQ
+	bool
+	depends on ARCH_NUC990
+	default ARCH_NUC990
+	select IRQ_DOMAIN
+	select GENERIC_IRQ_CHIP
+	help
+	  Support for Nuvoton NUC990 SoCs Advanced Interrupt Controller.
+
 endmenu

@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+config ARCH_NUC990
+	bool "Nuvoton NUC990"
+	depends on ARCH_MULTI_V5
+	select ARM_AMBA
+	select COMMON_CLK_NUC990
+	select NUC990_AIC_IRQ
+	select NUC990_TIMER
+	select MFD_NUC990
+	select CPU_ARM926T
+	select SOC_BUS
+	select OF
+	select USE_OF
+	help
+	  Support for the Nuvoton NUC990 family of processors

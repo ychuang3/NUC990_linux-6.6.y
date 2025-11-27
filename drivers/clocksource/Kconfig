@@ -733,4 +733,14 @@ config GOLDFISH_TIMER
 	help
 	  Support for the timer/counter of goldfish-rtc
 
+config NUC990_TIMER
+	bool "NUC990 Timer"
+	depends on OF && ARCH_NUC990
+	default ARCH_NUC990
+	select TIMER_OF
+	select TIMER_PROBE
+	select CLKSRC_MMIO
+	help
+	  This option enables the NUC990 timer driver.
+
 endmenu

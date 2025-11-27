@@ -1,0 +1,34 @@
+/*
+ * Device Tree Source for NUC990 EVB
+ *
+ * Copyright (C) 2025 Nuvoton Technology Corp.
+ *
+ * The code contained herein is licensed under the GNU General Public
+ * License. You may obtain a copy of the GNU General Public License
+ * Version 2 or later at the following locations:
+ *
+ * http://www.opensource.org/licenses/gpl-license.html
+ * http://www.gnu.org/copyleft/gpl.html
+ */
+/dts-v1/;
+#include "nuc990.dtsi"
+
+/ {
+	model = "Nuvoton NUC990 EVB";
+	compatible = "nuvoton,nuc990";
+
+	chosen {
+		/* for evb */
+		// bootargs = "root=/dev/ram0 console=ttyS0,115200n8 earlycon rdinit=/sbin/init mem=128M lpj=744448";
+		// stdout-path = "serial0:115200n8";
+		/* for pz */
+		bootargs = "root=/dev/ram0 rdinit=/sbin/init console=ttyS0,750000 earlycon";
+		stdout-path = "serial0:750000";
+	};
+
+	memory: memory@0 {
+		device_type = "memory";
+		reg = <0x0 0x08000000>; /* DRAM space - 1, size : 128M DRAM */
+	};
+};
+
