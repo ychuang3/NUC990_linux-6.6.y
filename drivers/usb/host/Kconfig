@@ -302,6 +302,13 @@ config USB_EHCI_EXYNOS
 	  Enable support for the Samsung S5Pv210 and Exynos SOC's on-chip EHCI
 	  controller.
 
+config USB_EHCI_HCD_NUC990
+	tristate  "Support for Nuvoton NUC990 EHCI USB controller"
+	depends on USB_EHCI_HCD && ARCH_NUC990 || COMPILE_TEST
+	default y
+	help
+	  Enables support for Nuvoton NUC990 EHCI USB controller.
+
 config USB_EHCI_MV
 	tristate "EHCI support for Marvell PXA/MMP USB controller"
 	depends on ARCH_PXA || ARCH_MMP || COMPILE_TEST
@@ -438,6 +445,13 @@ config USB_OHCI_HCD_STI
 	help
 	  Enable support for the on-chip OHCI controller found on
 	  STMicroelectronics consumer electronics SoC's.
+
+config USB_OHCI_HCD_NUC990
+	tristate  "Support for Nuvoton NUC990 OHCI USB controller"
+	depends on USB_OHCI_HCD && ARCH_NUC990 || COMPILE_TEST
+	default y
+	help
+	  Enables support for Nuvoton NUC990 OHCI USB controller.
 
 config USB_OHCI_HCD_S3C2410
 	tristate "OHCI support for Samsung S3C64xx SoC series"

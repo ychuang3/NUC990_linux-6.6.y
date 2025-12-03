@@ -165,6 +165,25 @@
 			status = "disabled";
 		};
 
+		ehci: ehci@b0015000 {
+			compatible = "nuvoton,nuc990-ehci";
+			reg = <0x0 0xb0015000 0x0 0x1000>;
+			clocks = <&clk USBH_GATE>;
+			clock-names = "usbh_gate";
+			interrupts = <54 IRQ_TYPE_LEVEL_HIGH>;
+			oc-active-level = <0>;    /* 1: active-high; 0: active low */
+			status = "okay";
+		};
+
+		ohci: ohci@b00170000 {
+			compatible = "nuvoton,nuc990-ohci";
+			reg = <0x0 0xb0017000 0x0 0x1000>;
+			clocks = <&clk USBH_GATE>;
+			clock-names = "usbh_gate";
+			interrupts = <55 IRQ_TYPE_LEVEL_HIGH>;
+			status = "okay";
+		};
+
 		crypto: crypto@b001c000{
 			compatible = "nuvoton,nuc990-crypto";
 			reg = <0xb001c000 0x1000>;
