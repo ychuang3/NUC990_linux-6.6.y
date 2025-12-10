@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * drivers/usb/host/ehci-nuc990.c
- *
  * Nuvoton NUC990 EHCI driver
  *
  * Copyright (c) 2025 Nuvoton Technology Corporation.
@@ -16,17 +14,25 @@
 #include <linux/of_address.h>
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
+#include <linux/mfd/syscon.h>
+#include <linux/regmap.h>
 #include <linux/usb.h>
 #include <linux/usb/hcd.h>
 #include "ehci.h"
 
 #define DRIVER_DESC "Nuvoton NUC990 EHCI driver"
 
-/* EHCI / OHCI-related registers */
-#define USBPCR0                0xC4
-#define USBPCR1                0xC8
-#define OHCI_MISC_CTRL         0x204
-#define MISC_OCAL              BIT(3)   /* Over-Current Active Level bit */
+#define REG_SYS_PWRON		0x04
+#define USRHDSEN		BIT(11)
+
+#define REG_MISC_FCR		0x30
+#define USBID			BIT(16)
+
+#define REG_USBPCR0		0xC4
+#define REG_USBPCR1		0xC8
+
+#define REG_OHCI_MISCTRL	0x204
+#define MISC_OCAL		BIT(3)
 
 static const char hcd_name[] = "ehci-nuc990";
 
@@ -45,19 +51,42 @@ static const struct ehci_driver_overrides ehci_nuc990_drv_overrides __initconst 
 	.extra_priv_size = sizeof(struct nuc990_ehci_priv),
 };
 
-static int nuc990_start_ehci(struct device *dev)
+static int nuc990_start_ehci(struct platform_device *pdev)
 {
-	struct usb_hcd *hcd = dev_get_drvdata(dev);
+	struct usb_hcd *hcd = platform_get_drvdata(pdev);
 	struct nuc990_ehci_priv *priv;
-	struct device_node *np_ohci;
+	struct device_node *np_ohci, *np_sys;
+	struct regmap *sys_regmap;
 	void __iomem *ohci_base;
 	u32 reg;
+	int ret;
 
 	if (!hcd)
 		return -ENODEV;
 
-	/* Get OHCI node */
-	np_ohci = of_parse_phandle(dev->of_node, "ohci", 0);
+	np_sys = of_parse_phandle(pdev->dev.of_node, "nuvoton,sys", 0);
+	if (!np_sys)
+		return -ENODEV;
+
+	sys_regmap = syscon_node_to_regmap(np_sys);
+	of_node_put(np_sys);
+
+	if (IS_ERR(sys_regmap))
+		return PTR_ERR(sys_regmap);
+
+	ret = regmap_update_bits(sys_regmap, REG_MISC_FCR, USRHDSEN, USRHDSEN);
+	if (ret) {
+		dev_err(&pdev->dev, "Failed to set USRHDSEN\n");
+		return ret;
+	}
+
+	ret = regmap_update_bits(sys_regmap, REG_SYS_PWRON,  USBID, USBID);
+	if (ret) {
+		dev_err(&pdev->dev, "Failed to set USBID\n");
+		return ret;
+	}
+
+	np_ohci = of_parse_phandle(pdev->dev.of_node, "nuvoton,ohci", 0);
 	if (!np_ohci)
 		return -ENODEV;
 
@@ -66,24 +95,16 @@ static int nuc990_start_ehci(struct device *dev)
 	if (!ohci_base)
 		return -ENOMEM;
 
-	/* Read/modify/write OC active level */
-	reg = readl(ohci_base + OHCI_MISC_CTRL);
-
 	priv = hcd_to_nuc990_ehci_priv(hcd);
 
+	reg = readl(ohci_base + REG_OHCI_MISCTRL);
 	if (priv->oc_active_level)
-		writel(reg & ~MISC_OCAL, ohci_base + OHCI_MISC_CTRL);
+		writel(reg & ~MISC_OCAL, ohci_base + REG_OHCI_MISCTRL);
 	else
-		writel(reg | MISC_OCAL, ohci_base + OHCI_MISC_CTRL);
+		writel(reg | MISC_OCAL, ohci_base + REG_OHCI_MISCTRL);
 
-	iounmap(ohci_base);
-
-	/* Ensure ordering before touching EHCI PHY registers */
-	wmb();
-
-	/* enable PHY 0/1 */
-	writel(0x160, hcd->regs + USBPCR0);
-	writel(0x520, hcd->regs + USBPCR1);
+	writel(0x160, hcd->regs + REG_USBPCR0);
+	writel(0x520, hcd->regs + REG_USBPCR1);
 
 	return 0;
 }
@@ -173,7 +194,7 @@ static int ehci_nuc990_drv_probe(struct platform_device *pdev)
 		dev_warn(&pdev->dev, "oc-active-level not specified, default=0\n");
 	}
 
-	retval = nuc990_start_ehci(&pdev->dev);
+	retval = nuc990_start_ehci(pdev);
 	if (retval)
 		goto fail_clk;
 
@@ -191,7 +212,7 @@ fail_put_clk:
 fail_put:
 	usb_put_hcd(hcd);
 fail:
-	dev_err(&pdev->dev, "EHCI init failed (%d)\n", retval);
+	dev_err(&pdev->dev, "nuc990 ehci init failed (%d)\n", retval);
 	return retval;
 }
 
@@ -252,7 +273,7 @@ static struct platform_driver ehci_nuc990_driver = {
 	.driver		= {
 		.name	= "nuc990-ehci",
 		.pm	= &ehci_nuc990_pm_ops,
-		.of_match_table = of_match_ptr(nuc990_ehci_dt_ids),
+		.of_match_table = nuc990_ehci_dt_ids,
 	},
 };
 

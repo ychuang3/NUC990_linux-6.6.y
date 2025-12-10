@@ -1,0 +1,77 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: "http://devicetree.org/schemas/usb/nuvoton,nuc990-ehci.yaml#"
+$schema: "http://devicetree.org/meta-schemas/core.yaml#"
+
+title: Nuvoton NUC990 EHCI Host Controller
+
+maintainers:
+  - Jacky Huang <your_email@nuvoton.com>
+
+properties:
+  compatible:
+    const: nuvoton,nuc990-ehci
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  clocks:
+    maxItems: 1
+    description: Handle to USB Host clock.
+
+  clock-names:
+    items:
+      - const: usbh_gate
+
+  nuvoton,sys:
+    $ref: /schemas/types.yaml#/$defs/phandle
+    description: Phandle to NUC990 SYS controller for USBID / USRHDSEN configuration.
+
+  nuvoton,ohci:
+    $ref: /schemas/types.yaml#/$defs/phandle
+    description: Phandle to companion OHCI controller.
+
+  oc-active-level:
+    description: Overcurrent active level. 0 = active-low, 1 = active-high.
+    $ref: /schemas/types.yaml#/definitions/uint32
+
+required:
+  - compatible
+  - reg
+  - interrupts
+  - clocks
+  - clock-names
+  - nuvoton,sys
+  - nuvoton,ohci
+
+additionalProperties: false
+
+examples:
+  - |
+    sys: syscon@b0000000 {
+        compatible = "nuvoton,nuc990-syscon", "syscon", "simple-mfd";
+        reg = <0xb0000000 0x200>;
+    };
+
+    ohci: ohci@b0014000 {
+        compatible = "nuvoton,nuc990-ohci";
+        reg = <0xb0014000 0x1000>;
+        interrupts = <53>;
+        clocks = <&clk USBH_GATE>;
+    };
+
+    ehci@b0015000 {
+        compatible = "nuvoton,nuc990-ehci";
+        reg = <0xb0015000 0x1000>;
+        interrupts = <54>;
+        clocks = <&clk USBH_GATE>;
+        clock-names = "usbh_gate";
+        nuvoton,sys = <&sys>;
+        nuvoton,ohci = <&ohci>;
+        oc-active-level = <1>;
+    };
+
