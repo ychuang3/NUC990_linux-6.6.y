@@ -1399,4 +1399,13 @@ config TOUCHSCREEN_HIMAX_HX83112B
 	  To compile this driver as a module, choose M here: the
 	  module will be called himax_hx83112b.
 
+config TOUCHSCREEN_NUC990
+	tristate "Nuvoton NUC990 touchscreen support"
+	depends on OF && ARCH_NUC990
+	select INPUT_EVDEV
+	help
+	  This selects support for the resistive touchscreen controller
+	  found on Nuvoton NUC990 series. The normal ADC driver is also
+	  implemented in this driver.
+
 endif

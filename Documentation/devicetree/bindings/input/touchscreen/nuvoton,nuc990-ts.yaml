@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: "http://devicetree.org/schemas/input/touchscreen/nuvoton,nuc990-ts.yaml#"
+$schema: "http://devicetree.org/meta-schemas/core.yaml#"
+
+title: Nuvoton NUC990 Touchscreen Controller
+
+maintainers:
+  - name: Joey Lu
+    email: yclu4@nuvoton.com
+
+description: |
+  Touchscreen controller integrated in the Nuvoton NUC990 SoC. This mode
+  reuses the ADC hardware block with touchscreen-specific settings.
+
+properties:
+  compatible:
+    const: nuvoton,nuc990-ts
+
+  reg:
+    maxItems: 1
+
+  interrupts:
+    maxItems: 1
+
+  clocks:
+    maxItems: 1
+
+  enable-iio:
+    type: boolean
+    description: Enable IIO interface for dual-mode support.
+
+  enable-ts:
+    type: boolean
+    description: Enable touchscreen mode.
+
+  ts-type:
+    description: |
+      Touchscreen type.
+      Allowed values:
+        4 = 4-wire resistive
+        5 = 5-wire resistive
+    enum: [4, 5]
+
+required:
+  - compatible
+  - reg
+  - interrupts
+  - clocks
+
+additionalProperties: false
+
+examples:
+  - |
+    ts0: touchscreen@b0043000 {
+        compatible = "nuvoton,nuc990-ts";
+        reg = <0xb0043000 0x1000>;
+        interrupts = <42 IRQ_TYPE_LEVEL_HIGH>;
+        clocks = <&clk ADC0_GATE>;
+        enable-iio;
+        enable-ts;
+        ts-type = <4>;
+        status = "okay";
+    };

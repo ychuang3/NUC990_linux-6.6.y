@@ -32,3 +32,11 @@
 	};
 };
 
+&adc0 {
+	compatible = "nuvoton,nuc990-ts";
+	// pinctrl-names = "default";
+	// pinctrl-0 = <&pinctrl_adc0>;
+	ts-type = <4>;
+	status = "okay";
+};
+

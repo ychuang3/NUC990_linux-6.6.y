@@ -232,16 +232,26 @@
 				clocks = <&clk WWDT0_GATE>;
 				status = "disabled";
 			};
-
+#endif
 			adc0: adc@b0043000 {
-				compatible = "nuvoton,nuc990-adc";
+				compatible = "nuvoton,nuc990-ts";
 				reg = <0xb0043000 0x1000>;
 				interrupts = <42 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk ADC0_GATE>;
 				clock-names = "adc0";
+
+				/* custom configs for touchscreen, compatible = "nuvoton,nuc990-ts" */
+				enable-iio;
+				enable-ts;
+				ts-type = <4>;
+
+				/* custom configs for normal adc, compatible = "nuvoton,nuc990-adc" */
+				nuvoton,adc-vref = <3300>;
+				#io-channel-cells = <1>;
+
 				status = "disabled";
 			};
-
+#if 0
 			eadc0: eadc@b0044000 {
 				compatible = "nuvoton,nuc990-eadc";
 				reg = <0xb0044000 0x1000>;
