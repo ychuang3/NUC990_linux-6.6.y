@@ -1,0 +1,98 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: "http://devicetree.org/schemas/watchdog/nuvoton,nuc990-wdt.yaml#"
+$schema: "http://devicetree.org/meta-schemas/core.yaml#"
+
+title: Nuvoton NUC990 Watchdog Timer
+
+maintainers:
+  - name: Nuvoton MPU Software Team
+    email: linux-arm@lists.infradead.org
+
+description: |
+  The Nuvoton NUC990 Watchdog Timer (WDT) provides a hardware watchdog
+  that can reset the system when software becomes unresponsive.
+  The watchdog clock source is configured via the clock controller
+  using assigned-clocks.
+
+properties:
+  compatible:
+    const: nuvoton,nuc990-wdt
+
+  reg:
+    maxItems: 1
+    description: Base address and size of the watchdog registers.
+
+  interrupts:
+    maxItems: 1
+    description: Watchdog interrupt line, used when wakeup support is enabled.
+
+  clocks:
+    minItems: 1
+    maxItems: 1
+    description: |
+      The gated watchdog clock. The watchdog driver consumes this clock
+      and enables or disables it at runtime.
+
+  clock-names:
+    items:
+      - const: wdt0_gate
+
+  assigned-clocks:
+    minItems: 1
+    maxItems: 1
+    description: |
+      Clock mux used to select the watchdog clock source. This is typically
+      the parent of the watchdog gated clock.
+
+  assigned-clock-parents:
+    minItems: 1
+    maxItems: 1
+    description: |
+      Parent clock used as the watchdog clock source.
+
+  nuvoton,sys:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description: |
+      Phandle to the system controller node. This is required to access
+      the global write-protect and reset control registers.
+
+  nuvoton,wdt-wakeup:
+    type: boolean
+    description: |
+      Enable watchdog interrupt and system wakeup support.
+
+  status:
+    enum:
+      - okay
+      - disabled
+
+required:
+  - compatible
+  - reg
+  - clocks
+  - clock-names
+  - nuvoton,sys
+
+additionalProperties: false
+
+examples:
+  - |
+    wdt0: wdt@b0040000 {
+        compatible = "nuvoton,nuc990-wdt";
+        reg = <0xb0040000 0x100>;
+        interrupts = <1 IRQ_TYPE_LEVEL_HIGH>;
+
+        clocks = <&clk WDT0_GATE>;
+        clock-names = "wdt0_gate";
+
+        assigned-clocks = <&clk WDT0_MUX>;
+        assigned-clock-parents = <&clk HXT_DIV512>;
+
+        nuvoton,sys = <&sys>;
+        nuvoton,wdt-wakeup;
+
+        status = "okay";
+    };
+

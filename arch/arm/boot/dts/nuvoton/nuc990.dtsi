@@ -216,14 +216,20 @@
 				#interrupt-cells = <2>;
 				clocks = <&clk AIC_GATE>;
 			};
-#if 0
+
 			wdt0: wdt@b0040000 {
 				compatible = "nuvoton,nuc990-wdt";
 				reg = <0xb0040000 0x100>;
 				interrupts = <1 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk WDT0_GATE>;
-				status = "disabled";
+				clock-names = "wdt0_gate";
+				assigned-clocks = <&clk WDT0_MUX>;
+				assigned-clock-parents = <&clk HXT_DIV512>;
+				nuvoton,sys = <&sys>;
+				nuvoton,wdt-wakeup;
+				status = "okay";
 			};
+#if 0
 
 			wwdt0: wwdt@b0040100 {
 				compatible = "nuvoton,nuc990-wwdt";
