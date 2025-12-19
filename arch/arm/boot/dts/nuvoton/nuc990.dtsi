@@ -220,7 +220,6 @@
 			wdt0: wdt@b0040000 {
 				compatible = "nuvoton,nuc990-wdt";
 				reg = <0xb0040000 0x100>;
-				interrupts = <1 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk WDT0_GATE>;
 				clock-names = "wdt0_gate";
 				assigned-clocks = <&clk WDT0_MUX>;
@@ -229,16 +228,18 @@
 				nuvoton,wdt-wakeup;
 				status = "okay";
 			};
-#if 0
 
 			wwdt0: wwdt@b0040100 {
 				compatible = "nuvoton,nuc990-wwdt";
 				reg = <0xb0040100 0x100>;
-				interrupts = <2 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk WWDT0_GATE>;
-				status = "disabled";
+				clock-names = "wwdt0_gate";
+				assigned-clocks = <&clk WWDT0_MUX>;
+				assigned-clock-parents = <&clk HXT_DIV512>;
+				nuvoton,sys = <&sys>;
+				status = "okay";
 			};
-#endif
+
 			adc0: adc@b0043000 {
 				compatible = "nuvoton,nuc990-ts";
 				reg = <0xb0043000 0x1000>;

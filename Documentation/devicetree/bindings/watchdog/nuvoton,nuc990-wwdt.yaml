@@ -1,0 +1,85 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/watchdog/nuvoton,nuc990-wwdt.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Nuvoton NUC990 Window Watchdog Timer (WWDT)
+
+maintainers:
+  - name: Nuvoton MPU Software Team
+    email: linux@nuvoton.com
+
+description: |
+  The Nuvoton NUC990 Window Watchdog Timer (WWDT) is a hardware watchdog
+  that requires periodic reloads within a defined time window.
+  Once started, the watchdog cannot be stopped ("no way out") and will
+  reset the system if the reload operation is not performed correctly.
+
+  The watchdog clock source is configured via the clock framework and
+  is expected to be fixed by the device tree. The driver uses a fixed
+  hardware configuration and exposes a nominal timeout.
+
+properties:
+  compatible:
+    const: nuvoton,nuc990-wwdt
+
+  reg:
+    maxItems: 1
+    description:
+      Base address and size of the WWDT register region.
+
+  clocks:
+    maxItems: 1
+    description:
+      Gate clock for the WWDT peripheral.
+
+  clock-names:
+    items:
+      - const: wwdt0_gate
+
+  assigned-clocks:
+    maxItems: 1
+    description:
+      Clock mux used to select the WWDT clock source.
+
+  assigned-clock-parents:
+    maxItems: 1
+    description:
+      Parent clock for the WWDT clock mux. This should be configured to
+      a stable low-frequency clock suitable for watchdog operation.
+
+  nuvoton,sys:
+    $ref: /schemas/types.yaml#/definitions/phandle
+    description:
+      Phandle to the NUC990 system controller registers, used to control
+      the write-protection mechanism required to configure the WWDT.
+
+  status:
+    enum:
+      - okay
+      - disabled
+
+required:
+  - compatible
+  - reg
+  - clocks
+  - clock-names
+  - nuvoton,sys
+
+additionalProperties: false
+
+examples:
+  - |
+    wwdt0: wwdt@b0040100 {
+        compatible = "nuvoton,nuc990-wwdt";
+        reg = <0xb0040100 0x100>;
+        clocks = <&clk WWDT0_GATE>;
+        clock-names = "wwdt0_gate";
+        assigned-clocks = <&clk WWDT0_MUX>;
+        assigned-clock-parents = <&clk HXT_DIV512>;
+        nuvoton,sys = <&sys>;
+        status = "okay";
+    };
+...
+

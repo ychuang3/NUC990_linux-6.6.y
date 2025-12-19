@@ -2,7 +2,7 @@
 /*
  * Nuvoton NUC990 Watchdog Timer driver
  *
- * Copyright (c) 2025 [...]
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
  */
 
 #include <linux/bitops.h>
@@ -161,7 +161,7 @@ static const struct watchdog_info nuc990wdt_info = {
 	.options  = WDIOF_SETTIMEOUT | WDIOF_KEEPALIVEPING | WDIOF_MAGICCLOSE,
 };
 
-static struct watchdog_ops nuc990wdt_ops = {
+static const struct watchdog_ops nuc990wdt_ops = {
 	.owner = THIS_MODULE,
 	.start = nuc990wdt_start,
 	.stop  = nuc990wdt_stop,

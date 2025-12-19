@@ -1057,6 +1057,16 @@ config NUC990_WDT
 	  To compile this driver as a module, choose M here: the
 	  module will be called nuc990_wdt.
 
+config NUC990_WWDT
+	tristate "Nuvoton NUC990 Window Watchdog Timer"
+	depends on ARCH_NUC990 || COMPILE_TEST
+	select WATCHDOG_CORE
+	help
+	  Say Y here if to include support for the window watchdog timer
+	  for the Nuvoton NUC990 series microprosser.
+	  To compile this driver as a module, choose M here: the
+	  module will be called nuc990_wwdt.
+
 # X86 (i386 + ia64 + x86_64) Architecture
 
 config ACQUIRE_WDT
