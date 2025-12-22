@@ -320,13 +320,60 @@
 				clocks = <&clk BPWM1_GATE>;
 				status = "disabled";
 			};
-
+#endif
 			qspi: qspi@b0060000 {
 				compatible = "nuvoton,nuc990-qspi";
 				reg = <0xb0060000 0x1000>;
 				interrupts = <47 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk QSPI0_GATE>;
-				status = "disabled";
+				num_cs = <2>;
+				lsb = <0>;
+				sleep = <0>;
+				txbitlen = <8>;
+				quad = <0>;
+				bus_num = <0>;
+				spimode = <0>;
+				mrxphase = <0>;
+				status = "okay";
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				flash: flash@0 {
+					compatible = "spi-nand";
+					reg = <0 0x0 0x2000000>;
+					spi-max-frequency = <30000000>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					uboot@0 {
+						label = "spinand-uboot";
+						reg = <0x0 0x300000>;
+					};
+					uboot-env@300000 {
+						label = "spinand-uboot-env";
+						reg = <0x300000 0xc0000>;
+					};
+					device-tree@3c0000 {
+						label = "spinand-device-tree";
+						reg = <0x3c0000 0x40000>;
+					};
+					kernel@400000 {
+						label = "spinand-kernel";
+						reg = <0x400000 0x1800000>;
+					};
+					rootfs@1c00000 {
+						label = "spinand-rootfs";
+						reg = <0x1c00000 0x6400000>;
+					};
+				};
+
+				spidev0: spi@1 {
+					compatible = "semtech,sx1301";
+					reg = <1>;
+					spi-max-frequency = <12000000>;
+				};
+
 			};
 
 			spi0: spi@b0061000 {
@@ -334,7 +381,18 @@
 				reg = <0xb0061000 0x1000>;
 				interrupts = <48 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk SPI0_GATE>;
-				status = "disabled";
+				num_cs = <2>;
+				lsb = <0>;
+				sleep = <0>;
+				txbitlen = <8>;
+				bus_num = <2>;
+				spimode = <0>;
+				mrxphase = <0>;
+				spi-max-frequency = <10000000>;
+				status = "okay";
+
+				#address-cells = <1>;
+				#size-cells = <0>;
 			};
 
 			spi1: spi@b0062000 {
@@ -360,7 +418,7 @@
 				clocks = <&clk SPI3_GATE>;
 				status = "disabled";
 			};
-#endif
+
 			uart0: serial@b0070000 {
 				compatible = "nuvoton,nuc990-uart", "nuvoton,nuc990-earlycon";
 				reg = <0xb0070000 0x1000>;
