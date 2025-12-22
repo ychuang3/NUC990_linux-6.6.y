@@ -40,3 +40,8 @@
 	status = "okay";
 };
 
+&ebi0 {
+	//pinctrl-names = "default";
+	//pinctrl-0 = <&pinctrl_ebi0_16bit>;
+};
+

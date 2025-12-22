@@ -448,6 +448,12 @@ config SRAM
 config SRAM_EXEC
 	bool
 
+config NUC990_EBI
+	tristate "Nuvoton NUC990 EBI support"
+	depends on ARCH_NUC990
+	help
+	  This driver provides support for Nuvoton NUC990 EBI.
+
 config DW_XDATA_PCIE
 	depends on PCI
 	tristate "Synopsys DesignWare xData PCIe driver"

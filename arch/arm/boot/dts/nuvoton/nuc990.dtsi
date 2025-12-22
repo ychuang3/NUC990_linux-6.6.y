@@ -113,15 +113,56 @@
 			clocks = <&clk PDMA1_GATE>;
 			status = "disabled";
 		};
-
-		ebi: ebi@b0010000 {
-			compatible = "nuvoton,nuc990-ebi";
-			reg = <0xb0010000 0x1000>;
-			clocks = <&clk EBI_GATE>;
-			clock-names = "ebi";
-			status = "disabled";
-		};
 #endif
+	ebi0: ebi@b0010000 {
+		compatible = "nuvoton,nuc990-ebi";
+		reg = <0xb0010000 0x10>;
+		bank = <0>;
+		clock-enable = "ebi_gate";
+		clock-names = "ebi_gate";
+		clocks = <&clk EBI_GATE>;
+		status = "disabled";
+		csactiveLevel = <0>;//0:Low, 1: High
+		datawidth = <1>;//0:8bit, 1: 16bit
+		MCLKDIV = <2>;//0 ~ 7,EBI_CTL0[10:8]
+		tACC = <1>;//0 ~ 31, EBI_TCTLx[7:3]
+		tAHD = <1>;//0 ~ 7, EBI_TCTLx[10:9]
+		IDLE  = <3>;//0 ~ 15, EBI_TCTLx[27:24] and EBI_TCTLx[15:12]
+	};
+
+	ebi1: ebi@b0010010 {
+		compatible = "nuvoton,nuc990-ebi";
+		reg = <0xb0010010 0x10>;
+		bank = <1>;
+		clock-enable = "ebi_gate";
+		clock-names = "ebi_gate";
+		clocks = <&clk EBI_GATE>;
+		status = "disabled";
+		csactiveLevel = <0>;//0:Low, 1: High
+		datawidth = <1>;//0:8bit, 1: 16bit
+		MCLKDIV = <2>;//0 ~ 7,EBI_CTL0[10:8]
+		tALE = <0>;//0 ~ 7,EBI_CTL0[18:16]
+		tACC = <15>;//0 ~ 31, EBI_TCTLx[7:3]
+		tAHD = <3>;//0 ~ 7, EBI_TCTLx[10:9]
+		IDLE  = <7>;//0 ~ 15, EBI_TCTLx[27:24] and EBI_TCTLx[15:12]
+	};
+
+	ebi2: ebi@b0010020 {
+		compatible = "nuvoton,nuc990-ebi";
+		reg = <0xb0010020 0x0fe0>;
+		bank = <2>;
+		clock-enable = "ebi_gate";
+		clock-names = "ebi_gate";
+		clocks = <&clk EBI_GATE>;
+		status = "disabled";
+		csactiveLevel = <0>;//0:Low, 1: High
+		datawidth = <1>;//0:8bit, 1: 16bit
+		MCLKDIV = <4>;//0 ~ 7,EBI_CTL0[10:8]
+		tACC = <31>;//0 ~ 31, EBI_TCTLx[7:3]
+		tAHD = <7>;//0 ~ 7, EBI_TCTLx[10:9]
+		IDLE  = <15>;//0 ~ 15, EBI_TCTLx[27:24] and EBI_TCTLx[15:12]
+	};
+
 		emac0: ethernet@b0012000 {
 			compatible = "nuvoton,nuc990-emac";
 			reg = <0xb0012000 0x1000>;
@@ -266,17 +307,21 @@
 							<44 IRQ_TYPE_LEVEL_HIGH>,
 							<45 IRQ_TYPE_LEVEL_HIGH>,
 							<46 IRQ_TYPE_LEVEL_HIGH>;
-				
+
 				clocks = <&clk EADC0_GATE>;
 				status = "disabled";
 			};
-
+#endif
 			timer0: timer@b0050000 {
 				compatible = "nuvoton,nuc990-timer";
 				reg = <0xb0050000 0x100>;
 				interrupts = <18 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk TMR0_GATE>;
 				clock-names = "timer";
+				port-number = <0>;
+				nuvoton,clk = <&clk>;
+				assigned-clocks = <&clk TMR0_MUX>;
+				assigned-clock-parents = <&clk HXT_GATE>;
 				status = "disabled";
 			};
 
@@ -286,6 +331,10 @@
 				interrupts = <19 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk TMR1_GATE>;
 				clock-names = "timer";
+				port-number = <1>;
+				nuvoton,clk = <&clk>;
+				assigned-clocks = <&clk TMR1_MUX>;
+				assigned-clock-parents = <&clk HXT_GATE>;
 				status = "disabled";
 			};
 
@@ -295,6 +344,10 @@
 				interrupts = <20 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk TMR2_GATE>;
 				clock-names = "timer";
+				port-number = <2>;
+				nuvoton,clk = <&clk>;
+				assigned-clocks = <&clk TMR2_MUX>;
+				assigned-clock-parents = <&clk HXT_GATE>;
 				status = "disabled";
 			};
 
@@ -304,9 +357,13 @@
 				interrupts = <21 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk TMR3_GATE>;
 				clock-names = "timer";
+				port-number = <3>;
+				nuvoton,clk = <&clk>;
+				assigned-clocks = <&clk TMR3_MUX>;
+				assigned-clock-parents = <&clk HXT_GATE>;
 				status = "disabled";
 			};
-#endif
+
 			timer4: timer@b0052000 {
 				compatible = "nuvoton,nuc990-clksrc";
 				reg = <0xb0052000 0x100>;

@@ -285,27 +285,3 @@ static int __init nuc990_timer_init(struct device_node *np)
 TIMER_OF_DECLARE(nuc990_clksrc, "nuvoton,nuc990-clksrc", nuc990_timer_init);
 TIMER_OF_DECLARE(nuc990_clkevt, "nuvoton,nuc990-clkevt", nuc990_timer_init);
 
-static int nuc990_timer_probe(struct platform_device *pdev)
-{
-	return 0;
-}
-
-static int nuc990_timer_remove(struct platform_device *pdev)
-{
-	return 0;
-}
-
-static const struct of_device_id nuc990_timer_ids[] = {
-	{ .compatible = "nuvoton,nuc990-timer" },
-	{ /* sentinel */ }
-};
-
-static struct platform_driver nuc990_timer_driver = {
-	.probe = nuc990_timer_probe,
-	.remove = nuc990_timer_remove,
-	.driver = {
-		.name = "nuc990-timer",
-		.of_match_table = nuc990_timer_ids,
-	},
-};
-module_platform_driver(nuc990_timer_driver);
