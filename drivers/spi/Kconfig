@@ -713,6 +713,18 @@ config SPI_NPCM_PSPI
 	  This driver provides support for Nuvoton NPCM BMC
 	  Peripheral SPI controller in master mode.
 
+config SPI_NUC990_QSPI
+        tristate "Nuvoton NUC990 QSPI Controller"
+        help
+          This driver provides support for Nuvoton NUC990
+          QSPI controller in master mode.
+
+config SPI_NUC990_SPI
+        tristate "Nuvoton NUC990 SPI Controller"
+        help
+          This driver provides support for Nuvoton NUC990
+          SPI controller in master mode.
+
 config SPI_LANTIQ_SSC
 	tristate "Lantiq SSC SPI controller"
 	depends on LANTIQ || X86 || COMPILE_TEST
