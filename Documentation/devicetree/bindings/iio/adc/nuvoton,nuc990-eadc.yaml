@@ -1,0 +1,112 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: http://devicetree.org/schemas/iio/adc/nuvoton,nuc990-eadc.yaml#
+$schema: http://devicetree.org/meta-schemas/core.yaml#
+
+title: Nuvoton NUC990 Enhanced ADC (EADC)
+
+maintainers:
+  - name: Nuvoton Technology Corp.
+
+description: |
+  The NUC990 Enhanced ADC (EADC) is a multi-channel ADC controller
+  supporting up to 8 single-ended input channels and optional
+  differential channel pairs. It supports software-triggered and
+  interrupt-triggered conversions and integrates with the Linux
+  Industrial I/O (IIO) framework.
+
+properties:
+  compatible:
+    const: nuvoton,nuc990-eadc
+
+  reg:
+    maxItems: 1
+    description:
+      Base address and size of the EADC register block.
+
+  interrupts:
+    minItems: 1
+    maxItems: 4
+    description:
+      EADC interrupt lines. The first interrupt is used for ADINT0.
+      Additional interrupts may be present for future extensions.
+
+  clocks:
+    maxItems: 1
+    description:
+      Gate clock for the EADC controller.
+
+  clock-names:
+    items:
+      - const: eadc0_gate
+
+  clock-enable:
+    description:
+      Name of the EADC clock gate. This property is used by the driver
+      to identify which clock should be enabled.
+    $ref: /schemas/types.yaml#/definitions/string
+
+  nuvoton,sys:
+    description:
+      Phandle to the system controller (syscon) node used to enable
+      the EADC function via SYS_MISCFCR.
+    $ref: /schemas/types.yaml#/definitions/phandle
+
+  eadc-frequency:
+    description:
+      Desired EADC operating clock frequency in Hz.
+    $ref: /schemas/types.yaml#/definitions/uint32
+    minimum: 1
+
+  eadc-channels:
+    description: |
+      List of single-ended ADC channels to enable.
+      Each value represents a channel index.
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    minItems: 1
+    maxItems: 8
+    items:
+      minimum: 0
+      maximum: 7
+
+  eadc-diff-channels:
+    description: |
+      List of differential ADC channel pairs.
+      Each pair consists of two values: <vinp vinn>.
+    $ref: /schemas/types.yaml#/definitions/uint32-array
+    minItems: 2
+    maxItems: 16
+    items:
+      minimum: 0
+      maximum: 7
+
+  "#io-channel-cells":
+    const: 1
+
+required:
+  - compatible
+  - reg
+  - interrupts
+  - clocks
+  - clock-names
+  - nuvoton,sys
+  - eadc-frequency
+
+additionalProperties: false
+
+examples:
+  - |
+    eadc0: eadc@b0044000 {
+        compatible = "nuvoton,nuc990-eadc";
+        reg = <0xb0044000 0x1000>;
+        interrupts = <43 IRQ_TYPE_LEVEL_HIGH>;
+        clocks = <&clk EADC0_GATE>;
+        clock-names = "eadc0_gate";
+        clock-enable = "eadc0_gate";
+        nuvoton,sys = <&sys>;
+        eadc-frequency = <10000000>;
+        eadc-channels = <0 1 2 3 4 5 6 7>;
+        #io-channel-cells = <1>;
+        status = "okay";
+    };

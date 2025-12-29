@@ -889,6 +889,17 @@ config NUC990_ADC
 	  This driver can also be built as a module. If so, the module
 	  will be called nuc990_adc.
 
+config NUC990_EADC
+	tristate "Nuvoton NUC990 EADC driver"
+	depends on ARCH_NUC990 || COMPILE_TEST
+	select IIO_BUFFER
+	select IIO_TRIGGERED_BUFFER
+	help
+	  Say yes here to build support for Nuvoton NUC990 series EADC.
+
+	  This driver can also be built as a module. If so, the module
+	  will be called nuc990_adc.
+
 config PALMAS_GPADC
 	tristate "TI Palmas General Purpose ADC"
 	depends on MFD_PALMAS

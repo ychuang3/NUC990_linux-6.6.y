@@ -299,19 +299,23 @@
 
 				status = "disabled";
 			};
-#if 0
+
 			eadc0: eadc@b0044000 {
 				compatible = "nuvoton,nuc990-eadc";
 				reg = <0xb0044000 0x1000>;
 				interrupts = <43 IRQ_TYPE_LEVEL_HIGH>,
-							<44 IRQ_TYPE_LEVEL_HIGH>,
-							<45 IRQ_TYPE_LEVEL_HIGH>,
-							<46 IRQ_TYPE_LEVEL_HIGH>;
-
+					     <44 IRQ_TYPE_LEVEL_HIGH>,
+					     <45 IRQ_TYPE_LEVEL_HIGH>,
+					     <46 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk EADC0_GATE>;
-				status = "disabled";
+				clock-names = "eadc0_gate";
+				clock-enable = "eadc0_gate";
+				nuvoton,sys = <&sys>;
+				eadc-frequency = <10000000>;
+				eadc-channels = <0 1 2 3 4 5 6 7>;
+				status = "okay";
 			};
-#endif
+
 			timer0: timer@b0050000 {
 				compatible = "nuvoton,nuc990-timer";
 				reg = <0xb0050000 0x100>;
@@ -387,6 +391,7 @@
 				reg = <0xb0058000 0x1000>;
 				interrupts = <30 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk BPWM0_GATE>;
+				clock-names = "bpwm0_gate";
 				status = "disabled";
 			};
 
@@ -395,14 +400,16 @@
 				reg = <0xb0059000 0x1000>;
 				interrupts = <31 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk BPWM1_GATE>;
+				clock-names = "bpwm1_gate";
 				status = "disabled";
 			};
 #endif
-			qspi: qspi@b0060000 {
+			qspi: spi@b0060000 {
 				compatible = "nuvoton,nuc990-qspi";
 				reg = <0xb0060000 0x1000>;
 				interrupts = <47 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk QSPI0_GATE>;
+				clock-names = "qspi0_gate";
 				num_cs = <2>;
 				lsb = <0>;
 				sleep = <0>;
@@ -411,7 +418,7 @@
 				bus_num = <0>;
 				spimode = <0>;
 				mrxphase = <0>;
-				status = "okay";
+				status = "disabled";
 
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -458,6 +465,7 @@
 				reg = <0xb0061000 0x1000>;
 				interrupts = <48 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk SPI0_GATE>;
+				clock-names = "spi0_gate";
 				num_cs = <2>;
 				lsb = <0>;
 				sleep = <0>;
@@ -477,6 +485,7 @@
 				reg = <0xb0062000 0x1000>;
 				interrupts = <49 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk SPI1_GATE>;
+				clock-names = "spi1_gate";
 				status = "disabled";
 			};
 
@@ -485,6 +494,7 @@
 				reg = <0xb0063000 0x1000>;
 				interrupts = <50 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk SPI2_GATE>;
+				clock-names = "spi2_gate";
 				status = "disabled";
 			};
 
@@ -493,6 +503,7 @@
 				reg = <0xb0064000 0x1000>;
 				interrupts = <51 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk SPI3_GATE>;
+				clock-names = "spi3_gate";
 				status = "disabled";
 			};
 
