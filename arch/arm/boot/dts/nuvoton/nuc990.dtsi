@@ -604,12 +604,16 @@
 				clock-names = "uart";
 				status = "disabled";
 			};
-
+#endif
 			i2c0: i2c@b0080000 {
 				compatible = "nuvoton,nuc990-i2c";
 				reg = <0xb0080000 0x1000>;
 				interrupts = <24 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk I2C0_GATE>;
+				clock-frequency = <100000>;
+				resets = <&reset NUC990_RESET_I2C0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 				status = "disabled";
 			};
 
@@ -618,6 +622,10 @@
 				reg = <0xb0081000 0x1000>;
 				interrupts = <25 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk I2C1_GATE>;
+				clock-frequency = <100000>;
+				resets = <&reset NUC990_RESET_I2C1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 				status = "disabled";
 			};
 
@@ -626,6 +634,10 @@
 				reg = <0xb0082000 0x1000>;
 				interrupts = <26 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk I2C2_GATE>;
+				clock-frequency = <100000>;
+				resets = <&reset NUC990_RESET_I2C2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 				status = "disabled";
 			};
 
@@ -634,45 +646,44 @@
 				reg = <0xb0083000 0x1000>;
 				interrupts = <27 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk I2C3_GATE>;
+				clock-frequency = <100000>;
+				resets = <&reset NUC990_RESET_I2C3>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 				status = "disabled";
 			};
 
 			can0: can@b00a0000 {
-				compatible = "bosch,m_can";
+				compatible = "nuvoton,nuc990-can";
 				reg = <0xb00a0000 0x1000>;
 				interrupts = <64 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk CAN0_GATE>;
-				clock-names = "can";
 				status = "disabled";
 			};
 
 			can1: can@b00a1000 {
-				compatible = "bosch,m_can";
+				compatible = "nuvoton,nuc990-can";
 				reg = <0xb00a1000 0x1000>;
 				interrupts = <65 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk CAN1_GATE>;
-				clock-names = "can";
 				status = "disabled";
 			};
 
 			can2: can@b00a2000 {
-				compatible = "bosch,m_can";
+				compatible = "nuvoton,nuc990-can";
 				reg = <0xb00a2000 0x1000>;
 				interrupts = <66 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk CAN2_GATE>;
-				clock-names = "can";
 				status = "disabled";
 			};
 
 			can3: can@b00a3000 {
-				compatible = "bosch,m_can";
+				compatible = "nuvoton,nuc990-can";
 				reg = <0xb00a3000 0x1000>;
 				interrupts = <67 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk CAN3_GATE>;
-				clock-names = "can";
 				status = "disabled";
 			};
-#endif
 		};
 	};
 };

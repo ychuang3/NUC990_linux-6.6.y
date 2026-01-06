@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+%YAML 1.2
+---
+$id: "http://devicetree.org/schemas/net/can/nuvoton,nuc990-can.yaml#"
+$schema: "http://devicetree.org/meta-schemas/core.yaml#"
+
+title: Nuvoton NUC990 Controller Area Network (CAN2.0) Controller
+
+maintainers:
+  - ZY Chen <zychen@nuvoton.com>
+
+description: |
+  NUVOTON NUC990 Controller Area Network (CAN 2.0) controller.
+  This binding describes the device tree properties required to
+  use "nuvoton,nuc990-can0" in a Linux system.
+
+properties:
+  compatible:
+    const: nuvoton,nuc990-can
+
+  reg:
+    description: Register block addresses
+    type: phandle
+
+  interrupts:
+    description: Interrupts used by the CAN controller
+    type: phandle-array
+
+  clocks:
+    description: The CAN controller clock(s) required by the device
+    type: phandle-array
+
+  wakeup-source:
+    type: boolean
+    description:
+      Indicates that the CAN controller can wake up the system from suspend.
+
+required:
+  - compatible
+  - reg
+  - interrupts
+
+additionalProperties: false
+
+examples:
+  - |
+    can0: can@b00a0000 {
+      compatible = "nuvoton,nuc990-can";
+      reg = <0xb00a0000 0x1000>;
+      interrupts = <64 IRQ_TYPE_LEVEL_HIGH>;
+      clocks = <&clk CAN0_GATE>;
+      wakeup-source;
+    };
