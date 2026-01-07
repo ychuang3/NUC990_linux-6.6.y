@@ -204,6 +204,14 @@
 			status = "okay";
 		};
 
+		keystore: keystore@b001f000 {
+			compatible = "nuvoton,nuc990-keystore";
+			reg = <0xb001f000 0x50>;
+			clocks = <&clk KS_GATE>;
+			clock-names = "ks_gate";
+			status = "okay";
+		};
+
 #if 0
 		sdh1: sdh@b0018000 {
 			compatible = "nuvoton,nuc990-sdh";

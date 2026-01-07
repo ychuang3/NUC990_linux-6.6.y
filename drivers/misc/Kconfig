@@ -568,6 +568,13 @@ config TPS6594_PFSM
 	  This driver can also be built as a module.  If so, the module
 	  will be called tps6594-pfsm.
 
+config NUC990_KEYSTORE
+	tristate "Nuvoton NUC990 Key Store driver"
+	depends on ARCH_NUC990 || COMPILE_TEST
+	default y
+	help
+	  This driver provides support for Nuvoton NUC990 Key Store.
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
