@@ -6,13 +6,14 @@
  */
 
 #include <linux/clk.h>
+#include <linux/fs.h>
 #include <linux/io.h>
 #include <linux/kernel.h>
 #include <linux/miscdevice.h>
 #include <linux/module.h>
 #include <linux/of_platform.h>
 #include <linux/slab.h>
-
+#include <linux/uaccess.h>
 #include <uapi/misc/nuc990_keystore.h>
 
 #define MISCDEV_NAME		"ksdev"
@@ -25,8 +26,6 @@ struct nuc990_ks_dev {
 	void __iomem *reg_base;
 	struct clk *clk;
 };
-
-static char  ks_miscdev_name[] = MISCDEV_NAME;
 
 /*
  *  Word count of key index to key size in bit 128, 163, 192, 224,
