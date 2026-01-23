@@ -243,15 +243,23 @@
 			clocks = <&clk CRPT_GATE>;
 			status = "disabled";
 		};
-
+#endif
 		i2s: i2s@b0020000 {
 			compatible = "nuvoton,nuc990-audio-i2s";
 			reg = <0xb0020000 0x1000>;
 			interrupts = <16 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&clk I2S_GATE>;
+			resets = <&reset NUC990_RESET_I2S>;
 			status = "disabled";
 		};
-#endif
+
+		sound: audio {
+			compatible = "nuvoton,nuc990-audio";
+			i2s-controller = <&i2s>;
+			i2s-platform = <&i2s>;
+			status = "disabled";
+		};
+
 		apb {
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -328,12 +336,8 @@
 				compatible = "nuvoton,nuc990-timer";
 				reg = <0xb0050000 0x100>;
 				interrupts = <18 IRQ_TYPE_LEVEL_HIGH>;
-				clocks = <&clk TMR0_GATE>;
-				clock-names = "timer";
-				port-number = <0>;
-				nuvoton,clk = <&clk>;
-				assigned-clocks = <&clk TMR0_MUX>;
-				assigned-clock-parents = <&clk HXT_GATE>;
+				clocks = <&clk TMR0_GATE>, <&clk TMR0_MUX>;
+				clock-names = "timer", "eclk";
 				status = "disabled";
 			};
 
@@ -341,12 +345,8 @@
 				compatible = "nuvoton,nuc990-timer";
 				reg = <0xb0050100 0x100>;
 				interrupts = <19 IRQ_TYPE_LEVEL_HIGH>;
-				clocks = <&clk TMR1_GATE>;
-				clock-names = "timer";
-				port-number = <1>;
-				nuvoton,clk = <&clk>;
-				assigned-clocks = <&clk TMR1_MUX>;
-				assigned-clock-parents = <&clk HXT_GATE>;
+				clocks = <&clk TMR1_GATE>, <&clk TMR1_MUX>;
+				clock-names = "timer", "eclk";
 				status = "disabled";
 			};
 
@@ -354,12 +354,8 @@
 				compatible = "nuvoton,nuc990-timer";
 				reg = <0xb0051000 0x100>;
 				interrupts = <20 IRQ_TYPE_LEVEL_HIGH>;
-				clocks = <&clk TMR2_GATE>;
-				clock-names = "timer";
-				port-number = <2>;
-				nuvoton,clk = <&clk>;
-				assigned-clocks = <&clk TMR2_MUX>;
-				assigned-clock-parents = <&clk HXT_GATE>;
+				clocks = <&clk TMR2_GATE>, <&clk TMR2_MUX>;
+				clock-names = "timer", "eclk";
 				status = "disabled";
 			};
 
@@ -367,12 +363,8 @@
 				compatible = "nuvoton,nuc990-timer";
 				reg = <0xb0051100 0x100>;
 				interrupts = <21 IRQ_TYPE_LEVEL_HIGH>;
-				clocks = <&clk TMR3_GATE>;
-				clock-names = "timer";
-				port-number = <3>;
-				nuvoton,clk = <&clk>;
-				assigned-clocks = <&clk TMR3_MUX>;
-				assigned-clock-parents = <&clk HXT_GATE>;
+				clocks = <&clk TMR3_GATE>, <&clk TMR3_MUX>;
+				clock-names = "timer", "eclk";
 				status = "disabled";
 			};
 
@@ -682,6 +674,66 @@
 				reg = <0xb00a3000 0x1000>;
 				interrupts = <67 IRQ_TYPE_LEVEL_HIGH>;
 				clocks = <&clk CAN3_GATE>;
+				status = "disabled";
+			};
+
+			canfd0: m_can@b0100000 {
+				compatible = "bosch,m_can";
+				reg = <0xb0100000 0x200>,<0xb0100200 0x2000>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <72 IRQ_TYPE_LEVEL_HIGH>,
+							<73 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-names = "int0", "int1";
+				clocks = <&clk HCLK>,
+						<&clk CANFD0_GATE>;
+				clock-names = "hclk", "cclk";
+				bosch,mram-cfg = <0x0 4 4 32 32 32 8 8>;
+				assigned-clocks = <&clk CANFD0_MUX>;
+				assigned-clock-parents = <&clk APLL_DIV>;
+				status = "disabled";
+			};
+
+			canfd1: m_can@b0110000 {
+				compatible = "bosch,m_can";
+				reg = <0xb0110000 0x200>, <0xb0110200 0x2000>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <74 IRQ_TYPE_LEVEL_HIGH>,
+							<75 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-names = "int0", "int1";
+				clocks = <&clk HCLK_GATE>,
+						<&clk CANFD1_GATE>;
+				clock-names = "hclk", "cclk";
+				bosch,mram-cfg = <0x0 4 4 32 32 32 8 8>;
+				assigned-clocks = <&clk CANFD1_MUX>;
+				assigned-clock-parents = <&clk APLL_DIV>;
+				status = "disabled";
+			};
+
+			can2fd: m_can@b0120000 {
+				compatible = "bosch,m_can";
+				reg = <0xb0120000 0x200>, <0xb0120200 0x2000>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <76 IRQ_TYPE_LEVEL_HIGH>,
+							<77 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-names = "int0", "int1";
+				clocks = <&clk HCLK_GATE>,
+						<&clk CANFD2_GATE>;
+				clock-names = "hclk", "cclk";
+				bosch,mram-cfg = <0x0 4 4 32 32 32 8 8>;
+				status = "disabled";
+			};
+
+			canfd3: m_can@b0130000 {
+				compatible = "bosch,m_can";
+				reg = <0xb0130000 0x200>, <0xb0130200 0x2000>;
+				reg-names = "m_can", "message_ram";
+				interrupts = <78 IRQ_TYPE_LEVEL_HIGH>,
+							<79 IRQ_TYPE_LEVEL_HIGH>;
+				interrupt-names = "int0", "int1";
+				clocks = <&clk HCLK_GATE>,
+						<&clk CANFD3_GATE>;
+				clock-names = "hclk", "cclk";
+				bosch,mram-cfg = <0x0 4 4 32 32 32 8 8>;
 				status = "disabled";
 			};
 		};

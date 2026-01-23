@@ -22,12 +22,13 @@
 #include <linux/of.h>
 #include <linux/of_irq.h>
 #include <linux/of_address.h>
-#include <linux/of_platform.h>
 #include <linux/platform_device.h>
-#include <linux/pinctrl/consumer.h>
+#include <linux/uaccess.h>
 
 #include "regs-nuc990-timer.h"
 #include <uapi/misc/nuc990_timer.h>
+
+#define DEV_NAME_LEN 16
 
 #define TIMER_CH 4
 #define TIMER_OPMODE_NONE 0
@@ -62,27 +63,24 @@
 
 struct nuc990_timer {
 	spinlock_t lock;
+	char dev_name[DEV_NAME_LEN];
+	struct miscdevice miscdev;
 	struct device *dev;
 	struct clk *clk;
 	struct clk *eclk;
-	void __iomem *clkbase;
 	void __iomem *regs;
 	wait_queue_head_t wq;
 	int minor; // dynamic minor num, so we need this to distinguish between channels
 	u32 cap; // latest capture data
 	u32 cnt; // latest timer up-counter value
 	int irq; // interrupt number
-	u8 ch; // timer channel. 0~3
 	u8 mode; // Current OP mode. Counter, free counting, trigger counting...
 	u8 occupied; // device opened
 	u8 update; // new capture data available
 	u8 clksel;
 	u32 psc;
+	int port;
 };
-
-static struct nuc990_timer *tmr[TIMER_CH];
-
-static uint32_t gu32_cnt;
 
 static irqreturn_t nuc990_timer_interrupt(int irq, void *dev_id)
 {
@@ -95,7 +93,7 @@ static irqreturn_t nuc990_timer_interrupt(int irq, void *dev_id)
 	spin_lock(&t->lock);
 	flag = __raw_readl(t->regs + REG_TIMER_INTSTS);
 	if (flag & 0x1) {
-		t->cnt = gu32_cnt++;
+		t->cnt++;
 		// Clear Timer Time-out Interrupt Status
 		__raw_writel(__raw_readl(t->regs + REG_TIMER_INTSTS) & 0x1,
 			     t->regs + REG_TIMER_INTSTS);
@@ -133,7 +131,8 @@ static irqreturn_t nuc990_timer_interrupt(int irq, void *dev_id)
 		}
 
 		// Clear Timer capture Interrupt Status
-		__raw_writel(__raw_readl(t->regs + REG_TIMER_EINTSTS) & 0x1,
+		__raw_writel(__raw_readl(t->regs + REG_TIMER_EINTSTS) &
+				     EINTSTS_CAPIF,
 			     t->regs + REG_TIMER_EINTSTS);
 	}
 
@@ -142,62 +141,48 @@ static irqreturn_t nuc990_timer_interrupt(int irq, void *dev_id)
 
 	return IRQ_HANDLED;
 }
-
-static void timer_SwitchClkSrc(u8 u8clksel, struct nuc990_timer *t)
+static int timer_SwitchClkSrc(unsigned int u8clksel, unsigned int target_hz,
+			      struct nuc990_timer *t)
 {
-	struct clk *clkmux;
-	u8 ch;
-	u32 val, tmpval;
-	ulong tmrFreq;
+	struct clk_hw *hw;
+	struct clk_hw *parent_hw;
+	unsigned long parent_rate;
 	int ret;
 
-	ch = t->ch;
-	t->clksel = u8clksel;
+	if (u8clksel >= 4)
+		return -EINVAL;
 
-	if (u8clksel == 0) {
-		t->psc = (12 - 1);
-		tmrFreq = 12000000;
-	} else if (u8clksel == 1) {
-		t->psc = 10 - 1;
-		tmrFreq = 75000000;
-	} else if (u8clksel == 2) {
-		t->psc = (1 - 1);
-		tmrFreq = 36621;
+	hw = __clk_get_hw(t->eclk);
+	if (!hw)
+		return -EINVAL;
+
+	parent_hw = clk_hw_get_parent_by_index(hw, u8clksel);
+	if (!parent_hw) {
+		dev_err(t->dev, "Parent hw not found at index %d\n", u8clksel);
+		return -EINVAL;
+	}
+
+	ret = clk_set_parent(t->eclk, parent_hw->clk);
+	if (ret) {
+		dev_err(t->dev, "Failed to set parent: %d\n", ret);
+		return ret;
+	}
+
+	parent_rate = clk_hw_get_rate(parent_hw);
+
+	if (target_hz > 0 && parent_rate >= target_hz) {
+		u32 psc_val = (parent_rate / target_hz) - 1;
+
+		t->psc = (psc_val > 0xFF) ? 0xFF : psc_val;
 	} else {
-		t->psc = (1 - 1);
-		tmrFreq = 32768;
+		t->psc = 0;
 	}
 
-	val = __raw_readl(t->clkbase + 0x40);
-	pr_debug("   tmr%d before clksel0:0x%08x  >>>\n", ch, val);
-	tmpval = (u8clksel << (ch * 2 + 16));
-	__raw_writel(tmpval | (val & ~(0x3 << (ch * 2 + 16))),
-		     t->clkbase + 0x40);
-	val = __raw_readl(t->clkbase + 0x40);
-	pr_debug("  tmr%d after  clksel0: [ 0x%08x ]  >>>\n", ch, val);
+	t->clksel = u8clksel;
+	dev_info(t->dev, "Match: ParentIndex %d, Rate %lu, PSC %d\n", u8clksel,
+		 parent_rate, t->psc);
 
-	t->eclk = of_clk_get(t->dev->of_node, 0);
-	if (IS_ERR(t->eclk)) {
-		ret = PTR_ERR(t->eclk);
-		dev_err(t->dev, "failed to get tmr eclk, ret %d\n", ret);
-		return;
-	}
-
-	clk_set_rate(t->eclk, tmrFreq);
-
-	clkmux = clk_get_parent(t->eclk);
-	if (IS_ERR(clkmux)) {
-		dev_err(t->dev, "failed to get tmr eclock\n");
-		ret = PTR_ERR(clkmux);
-		return;
-	}
-
-	ret = clk_set_parent(t->eclk, clkmux);
-	if (ret < 0) {
-		dev_err(t->dev, "failed to set parent %s for %s: %d\n",
-			__clk_get_name(clkmux), __clk_get_name(t->eclk), ret);
-		return;
-	}
+	return 0;
 }
 
 static void stop_timer(struct nuc990_timer *t)
@@ -236,43 +221,24 @@ static ssize_t timer_read(struct file *filp, char __user *buf, size_t count,
 		goto out;
 	}
 
-	if (t->update) {
-		if (t->mode == TIMER_OPMODE_TRIGGER_COUNTING ||
-		    t->mode == TIMER_OPMODE_FREE_COUNTING) {
-			if (copy_to_user(buf, &t->cap, sizeof(unsigned int)))
-				ret = -EFAULT;
-			else
-				ret = 4; // size of int.
-		} else if (t->mode == TIMER_OPMODE_PERIODIC ||
-			   t->mode == TIMER_OPMODE_EVENT_COUNTING) {
-			if (copy_to_user(buf, &t->cnt, sizeof(unsigned int)))
-				ret = -EFAULT;
-			else
-				ret = 4; // size of int.
-		}
-		t->update = 0;
-
-		goto out;
-	} else {
-		spin_unlock_irqrestore(&t->lock, flag);
-		wait_event_interruptible(t->wq, t->update != 0);
-		if (t->mode == TIMER_OPMODE_TRIGGER_COUNTING ||
-		    t->mode == TIMER_OPMODE_FREE_COUNTING) {
-			if (copy_to_user(buf, &t->cap, sizeof(unsigned int)))
-				ret = -EFAULT;
-			else
-				ret = 4; // size of int.
-		} else if (t->mode == TIMER_OPMODE_PERIODIC ||
-			   t->mode == TIMER_OPMODE_EVENT_COUNTING) {
-			if (copy_to_user(buf, &t->cnt, sizeof(unsigned int)))
-				ret = -EFAULT;
-			else
-				ret = 4; // size of int.
-		}
-		t->update = 0;
-
-		return ret;
+	spin_unlock_irqrestore(&t->lock, flag);
+	wait_event_interruptible(t->wq, t->update != 0);
+	if (t->mode == TIMER_OPMODE_TRIGGER_COUNTING ||
+	    t->mode == TIMER_OPMODE_FREE_COUNTING) {
+		if (copy_to_user(buf, &t->cap, sizeof(unsigned int)))
+			ret = -EFAULT;
+		else
+			ret = 4; // size of int.
+	} else if (t->mode == TIMER_OPMODE_PERIODIC ||
+		   t->mode == TIMER_OPMODE_EVENT_COUNTING) {
+		if (copy_to_user(buf, &t->cnt, sizeof(unsigned int)))
+			ret = -EFAULT;
+		else
+			ret = 4; // size of int.
 	}
+	t->update = 0;
+
+	return ret;
 
 out:
 	spin_unlock_irqrestore(&t->lock, flag);
@@ -283,85 +249,42 @@ out:
 static int timer_release(struct inode *inode, struct file *filp)
 {
 	struct nuc990_timer *t = (struct nuc990_timer *)filp->private_data;
-	int ch = t->ch;
 	unsigned long flag;
 
 	stop_timer(t);
 
-	// free irq
-	free_irq(tmr[ch]->irq, tmr[ch]);
 	// disable clk
-	clk_disable_unprepare(tmr[ch]->eclk);
-	clk_disable_unprepare(tmr[ch]->clk);
+	clk_disable_unprepare(t->eclk);
+	clk_disable_unprepare(t->clk);
 
-	spin_lock_irqsave(&tmr[ch]->lock, flag);
-	tmr[ch]->occupied = 0;
-	spin_unlock_irqrestore(&tmr[ch]->lock, flag);
+	spin_lock_irqsave(&t->lock, flag);
+	t->occupied = 0;
+	spin_unlock_irqrestore(&t->lock, flag);
 	filp->private_data = NULL;
 
 	return 0;
 }
 static int timer_open(struct inode *inode, struct file *filp)
 {
-	int i, ret;
-	u8 ch;
+	struct nuc990_timer *t;
+	int ret = 0;
 	unsigned long flag;
-	struct clk *clkmux;
-	int minor = iminor(inode);
 
-	for (i = 0; i < TIMER_CH; i++) {
-		if (tmr[i]->minor == minor) {
-			ch = i;
-			break;
-		}
-	}
+	t = container_of(filp->private_data, struct nuc990_timer, miscdev);
+	filp->private_data = t;
 
-	spin_lock_irqsave(&tmr[ch]->lock, flag);
-	if (tmr[ch]->occupied) {
-		spin_unlock_irqrestore(&tmr[ch]->lock, flag);
+	spin_lock_irqsave(&t->lock, flag);
+	if (t->occupied) {
+		spin_unlock_irqrestore(&t->lock, flag);
 		pr_debug("-EBUSY error\n");
 		return -EBUSY;
 	}
 
-	tmr[ch]->occupied = 1;
-	spin_unlock_irqrestore(&tmr[ch]->lock, flag);
+	t->occupied = 1;
+	spin_unlock_irqrestore(&t->lock, flag);
 
-	if (request_irq(tmr[ch]->irq, nuc990_timer_interrupt, IRQF_NO_SUSPEND,
-			"nuc990-timer", tmr[ch])) {
-		pr_debug("register irq failed %d\n", tmr[ch]->irq);
-		ret = -EAGAIN;
-		goto out2;
-	}
-	filp->private_data = tmr[ch];
-
-	clkmux = clk_get_parent(tmr[ch]->eclk);
-	if (IS_ERR(clkmux)) {
-		dev_err(tmr[ch]->dev, "failed to get tmr eclock\n");
-		ret = PTR_ERR(clkmux);
-		goto out1;
-	}
-
-	ret = clk_set_parent(tmr[ch]->eclk, clkmux);
-	if (ret < 0) {
-		dev_err(tmr[ch]->dev, "failed to set parent %s for %s: %d\n",
-			__clk_get_name(clkmux), __clk_get_name(tmr[ch]->eclk),
-			ret);
-		goto out1;
-	}
-
-	clk_prepare(tmr[ch]->clk);
-	clk_enable(tmr[ch]->clk);
-	clk_prepare(tmr[ch]->eclk);
-	clk_enable(tmr[ch]->eclk);
-
-	return 0;
-
-out1:
-	free_irq(tmr[ch]->irq, tmr[ch]);
-out2:
-	spin_lock_irqsave(&tmr[ch]->lock, flag);
-	tmr[ch]->occupied = 0;
-	spin_unlock_irqrestore(&tmr[ch]->lock, flag);
+	clk_prepare_enable(t->clk);
+	clk_prepare_enable(t->eclk);
 
 	return ret;
 }
@@ -370,23 +293,28 @@ static long timer_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	unsigned long flag;
 	struct nuc990_timer *t = (struct nuc990_timer *)filp->private_data;
+	struct nuc990_timer_config config;
 	unsigned int param;
 
 	// stop timer before we do any change
 	stop_timer(t);
 
-	// init time-out counts
-	gu32_cnt = 1;
-	t->cnt = gu32_cnt;
-	timer_SwitchClkSrc(t->clksel, t);
+	t->cnt = 0;
+	//timer_SwitchClkSrc(t->clksel, t);
 	switch (cmd) {
+	case TMR_IOC_CLKSET:
+		if (copy_from_user(&config, (void __user *)arg,
+				   sizeof(struct nuc990_timer_config)))
+			return -EFAULT;
+
+		timer_SwitchClkSrc(config.clk_idx, config.target_hz, t);
+		break;
 	case TMR_IOC_CLKLXT:
 	case TMR_IOC_CLKHXT:
 		if (copy_from_user((void *)&param, (const void *)arg,
 				   sizeof(unsigned int)))
 			return -EFAULT;
-		// switch clock source
-		timer_SwitchClkSrc(param, t);
+		timer_SwitchClkSrc(param, 1000000, t);
 		break;
 
 	case TMR_IOC_STOP:
@@ -505,122 +433,71 @@ static unsigned int timer_poll(struct file *filp, poll_table *wait)
 }
 
 static const struct file_operations timer_fops = {
-	.owner		= THIS_MODULE,
-	.open		= timer_open,
-	.release	= timer_release,
-	.read		= timer_read,
+	.owner = THIS_MODULE,
+	.open = timer_open,
+	.release = timer_release,
+	.read = timer_read,
 	.unlocked_ioctl = timer_ioctl,
-	.poll		= timer_poll,
-};
-
-static struct miscdevice timer_dev[] = {
-	[0] = {
-		.minor = MISC_DYNAMIC_MINOR,
-		.name = "timer0",
-		.fops = &timer_fops,
-	},
-	[1] = {
-		.minor = MISC_DYNAMIC_MINOR,
-		.name = "timer1",
-		.fops = &timer_fops,
-	},
-	[2] = {
-		.minor = MISC_DYNAMIC_MINOR,
-		.name = "timer2",
-		.fops = &timer_fops,
-	},
-	[3] = {
-		.minor = MISC_DYNAMIC_MINOR,
-		.name = "timer3",
-		.fops = &timer_fops,
-	},
-
+	.poll = timer_poll,
 };
 
 static int nuc990_timer_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	struct device_node *node = dev->of_node;
-	int ch = 0;
-	const char *clkmux;
-	struct resource *r;
-	u32 val32[2], val;
+	struct resource *res;
+	struct nuc990_timer *t;
 	int ret;
 
-	dev_info(&pdev->dev, "NUC990 Timer\n");
-	if (of_property_read_u32_array(pdev->dev.of_node, "port-number", val32,
-				       1) != 0) {
-		pr_err("%s can not get port-number!\n", __func__);
-		return -EINVAL;
-	}
-	ch = val32[0];
-	tmr[ch] = devm_kzalloc(&pdev->dev, sizeof(struct nuc990_timer),
-			       GFP_KERNEL);
-	if (tmr[ch] == NULL)
+	t = devm_kzalloc(&pdev->dev, sizeof(struct nuc990_timer), GFP_KERNEL);
+	if (t == NULL)
 		return -ENOMEM;
 
-	r = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	tmr[ch]->regs = devm_ioremap_resource(&pdev->dev, r);
-	if (IS_ERR(tmr[ch]->regs))
-		return PTR_ERR(tmr[ch]->regs);
+	t->regs = devm_platform_get_and_ioremap_resource(pdev, 0, &res);
+	if (IS_ERR(t->regs))
+		return PTR_ERR(t->regs);
 
-	tmr[ch]->dev = &pdev->dev;
-	misc_register(&timer_dev[ch]);
+	t->dev = &pdev->dev;
 
-	tmr[ch]->clk = devm_clk_get(&pdev->dev, NULL);
-	if (IS_ERR(tmr[ch]->clk)) {
-		dev_err(&pdev->dev, "failed to get timer clock\n");
-		return PTR_ERR(tmr[ch]->clk);
+	t->clk = devm_clk_get(t->dev, "timer");
+	t->eclk = devm_clk_get(t->dev, "eclk");
+	if (IS_ERR(t->clk) || IS_ERR(t->eclk))
+		return -EPROBE_DEFER;
+
+	spin_lock_init(&t->lock);
+
+	t->irq = platform_get_irq(pdev, 0);
+
+	init_waitqueue_head(&t->wq);
+
+	platform_set_drvdata(pdev, t);
+
+	if (devm_request_irq(t->dev, t->irq, nuc990_timer_interrupt,
+			     IRQF_NO_SUSPEND, dev_name(t->dev), t)) {
+		pr_debug("register irq failed %d\n", t->irq);
+		return -EAGAIN;
 	}
 
-	ret = clk_prepare_enable(tmr[ch]->clk);
-	if (ret) {
-		dev_err(&pdev->dev, "failed to enable tmr%d clk\n", ch);
-		return -ENOENT;
-	}
+	t->port = ((res->start & BIT(12)) >> 12) * 2 +
+		  ((res->start & BIT(8)) >> 8);
+	snprintf(t->dev_name, DEV_NAME_LEN, "timer%d", t->port);
+	t->miscdev.name = t->dev_name;
+	t->miscdev.minor = MISC_DYNAMIC_MINOR;
+	t->miscdev.fops = &timer_fops;
+	t->miscdev.parent = dev;
+	ret = misc_register(&t->miscdev);
+	if (ret)
+		dev_err(dev, "error:%d. Unable to register device", ret);
 
-	tmr[ch]->eclk = devm_clk_get(&pdev->dev, clkmux);
-	if (IS_ERR(tmr[ch]->eclk)) {
-		if (PTR_ERR(tmr[ch]->eclk) != -ENOENT)
-			return PTR_ERR(tmr[ch]->eclk);
+	dev_info(dev, "%s: nuc990 Timer\n", dev_name(t->miscdev.this_device));
 
-		tmr[ch]->eclk = NULL;
-	}
-
-	ret = clk_prepare_enable(tmr[ch]->eclk);
-	if (ret) {
-		dev_err(&pdev->dev, "Failed to enable tmr%d_eclk\n", ch);
-		return ret;
-	}
-	// Get Timer clock source
-	node = of_find_compatible_node(NULL, NULL, "nuvoton,nuc990-clk");
-	if (node) {
-		tmr[ch]->clkbase = of_iomap(node, 0);
-		if (IS_ERR(tmr[ch]->clkbase))
-			return PTR_ERR(tmr[ch]->clkbase);
-		val = __raw_readl(tmr[ch]->clkbase + 0x40);
-		tmr[ch]->clksel = (val & (0x3 << (ch * 2 + 16))) >>
-				  (ch * 2 + 16);
-	}
-	tmr[ch]->minor = MINOR(timer_dev[ch].minor);
-	tmr[ch]->ch = ch;
-	spin_lock_init(&tmr[ch]->lock);
-
-	tmr[ch]->irq = platform_get_irq(pdev, 0);
-
-	init_waitqueue_head(&tmr[ch]->wq);
-
-	platform_set_drvdata(pdev, tmr[ch]);
-
-	return 0;
+	return ret;
 }
 
 static int nuc990_timer_remove(struct platform_device *pdev)
 {
 	struct nuc990_timer *t = platform_get_drvdata(pdev);
-	int ch = t->ch;
 
-	misc_deregister(&timer_dev[ch]);
+	misc_deregister(&t->miscdev);
 
 	return 0;
 }

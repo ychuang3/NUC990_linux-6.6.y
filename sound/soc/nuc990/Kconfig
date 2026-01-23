@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-2.0-only
+##
+## NUC990 series I2S API
+##
+config SND_SOC_NUC990
+	tristate "SoC Audio for NUC990 series"
+	depends on ARCH_NUC990
+	help
+	  This option enables support for I2S on the NUC990 SoC.
+
+##
+## Boards
+##
+config SND_SOC_NUC990EVB
+	tristate "NUC990 I2S support for demo board"
+	depends on SND_SOC_NUC990
+	select SND_SOC_NAU8822
+	select SND_SOC_GENERIC_DMAENGINE_PCM
+	help
+	  Select this option to enable audio (I2S) on the
+	  NUC990 demoboard.
+
