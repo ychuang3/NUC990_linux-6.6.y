@@ -332,6 +332,16 @@
 				status = "okay";
 			};
 
+			rtc: rtc@b0041000 {
+				compatible = "nuvoton,nuc990-rtc";
+				reg = <0xb0041000 0x1000>;
+				interrupts = <17 IRQ_TYPE_LEVEL_HIGH>;
+				clocks = <&clk RTC_GATE>;
+				clock-names = "rtc_gate";
+				nuvoton,sys = <&sys>;
+				status = "disabled";
+			};
+
 			timer0: timer@b0050000 {
 				compatible = "nuvoton,nuc990-timer";
 				reg = <0xb0050000 0x100>;
